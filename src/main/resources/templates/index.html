@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product List</title>
+    <link rel="stylesheet" href="/css/product.css">
+</head>
+<body>
+<section>
+    <h1>Welcome, <span th:text="${#authentication.name}"></span>!</h1>
+    <h2>Product List</h2>
+    <table>
+        <thead>
+        <tr>
+            <th>Product Name</th>
+            <th>Category</th>
+            <th>Price</th>
+            <th>Quantity</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="product : ${products}">
+            <td th:text="${product.name}"></td>
+            <td th:text="${product.category}"></td>
+            <td th:text="${product.price}"></td>
+            <td th:text="${product.quantity}"></td>
+            <td>
+                <button onclick="addToCart(this)" th:attr="data-id=${product.id}">Add to Cart</button>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+
+    <div class="cart-buttons">
+        <button class="checkout-button" onclick="checkout()">Proceed to Checkout</button>
+    </div>
+
+    <form method="post" action="/logout">
+        <button type="submit">Logout</button>
+    </form>
+</section>
+
+<script>
+    function addToCart(button) {
+        const productId = button.getAttribute('data-id');
+        alert('Product ' + productId + ' added to cart!');
+        // TODO: Implement actual cart functionality
+    }
+
+    function checkout() {
+        alert('Proceeding to checkout!');
+        // TODO: Implement checkout process
+    }
+</script>
+</body>
+</html>
