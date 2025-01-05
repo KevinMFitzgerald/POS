@@ -71,6 +71,8 @@ public class SecurityConfig {
                         .defaultSuccessUrl("/index"))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/req/signup", "/css/**", "/js/**").permitAll()
+                        .requestMatchers("/api/inventory/**").permitAll()  // Allow public access to Inventory APIs
+                        .requestMatchers("/api/payment/**").permitAll()
                         .anyRequest().authenticated())
                 .authenticationProvider(authenticationProvider())
                 .headers(headers -> headers
@@ -78,4 +80,5 @@ public class SecurityConfig {
                 );
         return http.build();
     }
+
 }

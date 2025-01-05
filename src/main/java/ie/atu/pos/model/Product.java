@@ -6,8 +6,8 @@ import lombok.*;
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 @Data
+@Builder //using @Builder so I can have more flexabilty in adding products. ie not adding a category
 public class Product {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

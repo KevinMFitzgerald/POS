@@ -63,4 +63,11 @@ public class InventoryService {
         }
         inventoryRepo.deleteById(productId);
     }
+
+    public Product getOneProduct(Long id) {
+        return inventoryRepo.findById(id)
+                .orElseThrow(() ->
+                        new ProductNotFoundException("Product not found with ID: " + id)
+                );
+    }
 }

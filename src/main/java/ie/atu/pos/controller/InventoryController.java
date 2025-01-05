@@ -7,10 +7,14 @@ import ie.atu.pos.service.InsufficientStockException;
 import ie.atu.pos.service.ProductNotFoundException;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/inventory")
@@ -32,6 +36,22 @@ public class InventoryController {
                 request.getQuantity()
         );
         return ResponseEntity.ok(created);
+    }
+    @GetMapping(value = "/products/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Object> getProduct(@PathVariable Long id) {
+        try {
+            Product product = inventoryService.getOneProduct(id);
+            ProductDto productDto = new ProductDto();
+            productDto.setId(product.getId());
+            productDto.setName(product.getName());
+            productDto.setPrice(product.getPrice());
+            productDto.setQuantity(product.getQuantity());
+            return ResponseEntity.ok(productDto);
+        } catch (ProductNotFoundException e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Product not found");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).contentType(MediaType.APPLICATION_JSON).body(errorResponse);
+        }
     }
 
     @PutMapping("/products/{id}")

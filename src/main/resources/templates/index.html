@@ -8,7 +8,7 @@
 </head>
 <body>
 <section>
-    <h1>Welcome, <span th:text="${#authentication.name}"></span>!</h1>
+    <h1>Welcome, <span id="currentUser" th:text="${#authentication.name}"></span>!</h1>
     <h2>Product List</h2>
     <table>
         <thead>
@@ -45,13 +45,51 @@
 <script>
     function addToCart(button) {
         const productId = button.getAttribute('data-id');
-        alert('Product ' + productId + ' added to cart!');
-        // TODO: Implement actual cart functionality
-    }
+        const buyerUsername = document.getElementById('currentUser').textContent;
 
+        fetch('http://localhost:8082/api/cart/item', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                buyerUsername: buyerUsername,
+                productId: parseInt(productId),
+                quantity: 1  // Hard-code quantity=1 for now
+            })
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error adding item to cart');
+                }
+                return response.json();
+            })
+            .then(cart => {
+                alert('Cart updated for user: ' + cart.buyerUsername
+                    + '\nCurrent items: ' + JSON.stringify(cart.items));
+            })
+            .catch(err => {
+                alert(err);
+            });
+    }
     function checkout() {
-        alert('Proceeding to checkout!');
-        // TODO: Implement checkout process
+        const buyerUsername = document.getElementById('currentUser').textContent;
+
+        fetch('http://localhost:8082/api/cart/checkout', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                buyerUsername: buyerUsername
+            })
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Checkout failed');
+                }
+                return response.text();
+            })
+            .then(result => {
+                alert('Checkout result: ' + result);
+            })
+            .catch(err => alert(err));
     }
 </script>
 </body>
