@@ -51,7 +51,7 @@ public class SecurityConfig {
         http
                 .securityMatcher("/h2-console/**")
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
-                .csrf(csrf -> csrf.disable())
+                .csrf(AbstractHttpConfigurer::disable)
                 .headers(headers -> headers
                         .addHeaderWriter(new XFrameOptionsHeaderWriter(XFrameOptionsMode.DENY))
                 );
@@ -73,6 +73,7 @@ public class SecurityConfig {
                         .requestMatchers("/req/signup", "/css/**", "/js/**").permitAll()
                         .requestMatchers("/api/inventory/**").permitAll()  // Allow public access to Inventory APIs
                         .requestMatchers("/api/payment/**").permitAll()
+                        .requestMatchers("/api/cart/**").permitAll()
                         .anyRequest().authenticated())
                 .authenticationProvider(authenticationProvider())
                 .headers(headers -> headers

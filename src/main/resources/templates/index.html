@@ -70,27 +70,33 @@
                 alert(err);
             });
     }
-    function checkout() {
-        const buyerUsername = document.getElementById('currentUser').textContent;
+    async function checkout() {
+        const buyerUsername = document.getElementById('currentUser').textContent.trim(); // Fetch username from the span
 
-        fetch('http://localhost:8082/api/cart/checkout', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                buyerUsername: buyerUsername
-            })
-        })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Checkout failed');
-                }
-                return response.text();
-            })
-            .then(result => {
-                alert('Checkout result: ' + result);
-            })
-            .catch(err => alert(err));
+        if (!buyerUsername) {
+            alert("Username not found. Please log in.");
+            return;
+        }
+
+        try {
+            const response = await fetch("http://localhost:8082/api/cart/checkout", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ buyerUsername })
+            });
+
+            const result = await response.text();
+            if (response.ok) {
+                alert("Checkout Successful: " + result);
+                window.location.reload(); // Refresh cart view after success
+            } else {
+                alert("Error during checkout: " + result);
+            }
+        } catch (error) {
+            alert("Error connecting to the server: " + error.message);
+        }
     }
+
 </script>
 </body>
 </html>
