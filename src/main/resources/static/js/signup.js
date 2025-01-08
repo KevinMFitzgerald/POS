@@ -1,27 +1,38 @@
 document.addEventListener('DOMContentLoaded', function () {
-    const signupForm = document.querySelector('section');
-    signupForm.style.opacity = 0;
+    const loginForm = document.querySelector('form');
+    if (!loginForm) {
+        console.error("Login form not found!");
+        return;
+    }
 
-    setTimeout(() => {
-        signupForm.style.transition = 'opacity 1s ease-in-out';
-        signupForm.style.opacity = 1;
-    }, 500);
+    loginForm.addEventListener('submit', async function (event) {
+        event.preventDefault();
 
-    const signupButton = document.querySelector('button');
-    signupButton.addEventListener('click', function () {
-        const usernameInput = document.querySelector('input[type="text"]');
-        const passwordInput = document.querySelector('input[type="password"]');
-        const confirmPasswordInput = document.querySelector('input[type="password"][name="confirm-password"]');
+        const usernameInput = document.querySelector('input[name="username"]');
+        const passwordInput = document.querySelector('input[name="password"]');
 
-        // Check for a valid username and password (you can add your validation logic here)
-        const isValid = usernameInput.checkValidity() && passwordInput.checkValidity() && confirmPasswordInput.checkValidity();
+        if (!usernameInput || !passwordInput) {
+            alert("One or more fields are missing!");
+            return;
+        }
 
-        if (!isValid) {
-            signupForm.classList.add('shake');
+        try {
+            const response = await fetch('/req/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    username: usernameInput.value,
+                    password: passwordInput.value
+                })
+            });
 
-            setTimeout(() => {
-                signupForm.classList.remove('shake');
-            }, 1000);
+            if (response.ok) {
+                window.location.href = '/re/login';  // Redirect on successful login
+            } else {
+                alert("Invalid login credentials.");
+            }
+        } catch (error) {
+            alert("Error logging in. Please try again.");
         }
     });
 });
