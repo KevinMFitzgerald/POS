@@ -55,6 +55,7 @@ public class InventoryService {
             );
         }
         product.setQuantity(product.getQuantity() - amount);
+        inventoryRepo.save(product);  // save for clarity in tests
     }
 
     public void deleteProduct(Long productId) {

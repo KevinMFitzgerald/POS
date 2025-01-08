@@ -9,6 +9,7 @@
 <body>
 <section>
     <h1>Welcome, <span id="currentUser" th:text="${#authentication.name}"></span>!</h1>
+    <h2>Balance: $<span id="userBalance">Loading...</span></h2>
     <h2>Product List</h2>
     <table>
         <thead>
@@ -33,6 +34,24 @@
         </tbody>
     </table>
 
+    <!-- Cart Section -->
+    <h2>Your Cart</h2>
+    <table id="cartTable">
+        <thead>
+        <tr>
+            <th>Product Name</th>
+            <th>Quantity</th>
+            <th>Price</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody id="cartBody">
+        <tr>
+            <td colspan="4">Cart is empty</td>
+        </tr>
+        </tbody>
+    </table>
+
     <div class="cart-buttons">
         <button class="checkout-button" onclick="checkout()">Proceed to Checkout</button>
     </div>
@@ -43,35 +62,129 @@
 </section>
 
 <script>
-    function addToCart(button) {
+    document.addEventListener('DOMContentLoaded', async function () {
+        const buyerUsername = document.getElementById('currentUser').textContent;
+        try {
+            const response = await fetch(`http://localhost:8081/api/payment/balance/${buyerUsername}`);
+            if (response.ok) {
+                const balance = await response.json();
+                document.getElementById('userBalance').textContent = balance.toFixed(2);
+            } else {
+                document.getElementById('userBalance').textContent = "Error loading balance";
+            }
+        } catch (error) {
+            console.error("Failed to fetch balance:", error);
+            document.getElementById('userBalance').textContent = "Error loading balance";
+        }
+
+        updateCartView();
+    });
+
+    // ✅ Function to fetch and update the cart view
+    async function updateCartView() {
+        const buyerUsername = document.getElementById('currentUser').textContent;
+        const cartBody = document.getElementById('cartBody');
+
+        try {
+            const response = await fetch(`http://localhost:8082/api/cart/${buyerUsername}`);
+            if (response.ok) {
+                const cart = await response.json();
+                cartBody.innerHTML = '';  // Clear existing cart data
+                cart.items.forEach(item => {
+                    fetch(`http://localhost:8080/api/inventory/products/${item.productId}`)
+                        .then(res => res.json())
+                        .then(product => {
+                            cartBody.innerHTML += `
+                                <tr>
+                                    <td>${product.name}</td>
+                                    <td>${item.quantity}</td>
+                                    <td>$${(product.price * item.quantity).toFixed(2)}</td>
+                                    <td>
+                                        <button onclick="removeFromCart(${item.productId})">Remove</button>
+                                    </td>
+                                </tr>`;
+                        });
+                });
+            } else {
+                cartBody.innerHTML = `<tr><td colspan="4">Error loading cart</td></tr>`;
+            }
+        } catch (error) {
+            console.error("Error fetching cart:", error);
+            cartBody.innerHTML = `<tr><td colspan="4">Error loading cart</td></tr>`;
+        }
+    }
+
+    // ✅ Modified addToCart with stock check before adding
+    async function addToCart(button) {
         const productId = button.getAttribute('data-id');
         const buyerUsername = document.getElementById('currentUser').textContent;
 
-        fetch('http://localhost:8082/api/cart/item', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                buyerUsername: buyerUsername,
-                productId: parseInt(productId),
-                quantity: 1  // Hard-code quantity=1 for now
-            })
-        })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Error adding item to cart');
-                }
-                return response.json();
-            })
-            .then(cart => {
-                alert('Cart updated for user: ' + cart.buyerUsername
-                    + '\nCurrent items: ' + JSON.stringify(cart.items));
-            })
-            .catch(err => {
-                alert(err);
+        try {
+            const productResponse = await fetch(`http://localhost:8080/api/inventory/products/${productId}`);
+            const product = await productResponse.json();
+
+            // Fetch the current cart to check how many of this product are already in it
+            const cartResponse = await fetch(`http://localhost:8082/api/cart/${buyerUsername}`);
+            const cart = await cartResponse.json();
+
+            // Calculate the total amount in the cart
+            const cartItem = cart.items.find(item => item.productId == productId);
+            const currentCartQuantity = cartItem ? cartItem.quantity : 0;
+
+            if (currentCartQuantity >= product.quantity) {
+                alert(`Not enough stock for "${product.name}". Available: ${product.quantity}`);
+                return;
+            }
+
+            // Add to cart if the check passes
+            const addItemResponse = await fetch('http://localhost:8082/api/cart/item', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    buyerUsername: buyerUsername,
+                    productId: parseInt(productId),
+                    quantity: 1
+                })
             });
+
+            if (!addItemResponse.ok) {
+                throw new Error('Error adding item to cart');
+            }
+
+            alert(`${product.name} added to the cart successfully!`);
+            updateCartView();  // Refresh cart view
+        } catch (error) {
+            alert(error.message);
+        }
     }
+
+    // ✅ New function to remove items from the cart
+    async function removeFromCart(productId) {
+        const buyerUsername = document.getElementById('currentUser').textContent;
+
+        try {
+            const response = await fetch(`http://localhost:8082/api/cart/item/remove`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    buyerUsername: buyerUsername,
+                    productId: parseInt(productId)
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Error removing item from cart');
+            }
+
+            alert('Item removed from cart successfully!');
+            updateCartView();
+        } catch (error) {
+            alert(error.message);
+        }
+    }
+
     async function checkout() {
-        const buyerUsername = document.getElementById('currentUser').textContent.trim(); // Fetch username from the span
+        const buyerUsername = document.getElementById('currentUser').textContent.trim();
 
         if (!buyerUsername) {
             alert("Username not found. Please log in.");
@@ -88,7 +201,7 @@
             const result = await response.text();
             if (response.ok) {
                 alert("Checkout Successful: " + result);
-                window.location.reload(); // Refresh cart view after success
+                window.location.reload();
             } else {
                 alert("Error during checkout: " + result);
             }
@@ -96,7 +209,6 @@
             alert("Error connecting to the server: " + error.message);
         }
     }
-
 </script>
 </body>
 </html>
