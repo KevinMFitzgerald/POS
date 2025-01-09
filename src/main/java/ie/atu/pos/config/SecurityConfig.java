@@ -63,22 +63,18 @@ public class SecurityConfig {
      */
     @Bean
     @Order(2)
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception{
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .formLogin(form -> form
                         .loginPage("/req/login").permitAll()
                         .defaultSuccessUrl("/index"))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/req/signup", "/css/**", "/js/**").permitAll()
-                        .requestMatchers("/api/inventory/**").permitAll()  // Allow public access to Inventory APIs
-                        .requestMatchers("/api/payment/**").permitAll()
-                        .requestMatchers("/api/cart/**").permitAll()
+                        .requestMatchers("/req/signup", "/css/**", "/js/**", "/images/**").permitAll()  // Allow static files
                         .anyRequest().authenticated())
                 .authenticationProvider(authenticationProvider())
                 .headers(headers -> headers
-                        .addHeaderWriter(new XFrameOptionsHeaderWriter(XFrameOptionsMode.SAMEORIGIN))
-                );
+                        .addHeaderWriter(new XFrameOptionsHeaderWriter(XFrameOptionsMode.SAMEORIGIN)));
         return http.build();
     }
 
